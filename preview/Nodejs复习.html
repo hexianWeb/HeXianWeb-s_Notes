@@ -1,0 +1,416 @@
+<html>
+  <head>
+	  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>i5ting_ztree_toc:Nodejs复习</title>
+		<link href="toc/style/github-bf51422f4bb36427d391e4b75a1daa083c2d840e.css" media="all" rel="stylesheet" type="text/css"/>
+		<link href="toc/style/github2-d731afd4f624c99a4b19ad69f3083cd6d02b81d5.css" media="all" rel="stylesheet" type="text/css"/>
+		<link href="toc/css/zTreeStyle/zTreeStyle.css" media="all" rel="stylesheet" type="text/css"/>
+	  <style>
+		pre {
+		    counter-reset: line-numbering;
+		    border: solid 1px #d9d9d9;
+		    border-radius: 0;
+		    background: #fff;
+		    padding: 0;
+		    line-height: 23px;
+		    margin-bottom: 30px;
+		    white-space: pre;
+		    overflow-x: auto;
+		    word-break: inherit;
+		    word-wrap: inherit;
+		}
+
+		pre a::before {
+		  content: counter(line-numbering);
+		  counter-increment: line-numbering;
+		  padding-right: 1em; /* space after numbers */
+		  width: 25px;
+		  text-align: right;
+		  opacity: 0.7;
+		  display: inline-block;
+		  color: #aaa;
+		  background: #eee;
+		  margin-right: 16px;
+		  padding: 2px 10px;
+		  font-size: 13px;
+		  -webkit-touch-callout: none;
+		  -webkit-user-select: none;
+		  -khtml-user-select: none;
+		  -moz-user-select: none;
+		  -ms-user-select: none;
+		  user-select: none;
+		}
+
+		pre a:first-of-type::before {
+		  padding-top: 10px;
+		}
+
+		pre a:last-of-type::before {
+		  padding-bottom: 10px;
+		}
+
+		pre a:only-of-type::before {
+		  padding: 10px;
+		}
+
+		.highlight { background-color: #ffffcc } /* RIGHT */
+		</style>
+  </head>
+  <body>
+	  <div>
+				<div style='width:25%;'>
+						<ul id="tree" class="ztree" style='width:100%'>
+
+						</ul>
+				</div>
+        <div id='readme' style='width:70%;margin-left:20%;'>
+          	<article class='markdown-body'>
+            	<h1 id="nodejs-">Nodejs基础复习</h1>
+<h2 id="fs-">Fs模块</h2>
+<h3 id="readfile-">readFile方法获取文件</h3>
+<pre><code class="lang-js">// 1.导入 fs模块 来操作文件
+const fs = require(&quot;fs&quot;);
+
+// 2.调用fs 的readFile方法获取文件
+// 参数1：读取文件的存放路径
+// 参数2：读取时的编码格式 默认一般为 utf8
+// 参数3：回调函数 拿取读取成功和失败的结果
+fs.readFile(&quot;./files/1.txt&quot;, &quot;utf8&quot;, function (err, dataStr) {
+  if (err) {
+    console.log(&quot;读取文件失败&quot;);
+  }
+  //   打印成功的结果
+  console.log(&quot;文件的内容是&quot; + dataStr);
+});
+
+</code></pre>
+<h3 id="writefile-">writeFile方法写入内容</h3>
+<pre><code class="lang-js">// 1.导入 fs模块 来操作文件
+const fs = require(&quot;fs&quot;);
+
+// 2.调用fs 的writeFile函数 写入文件的内容
+// 参数1：表示文件的存放路径
+// 参数2：表示写入的内容
+// 参数3: 编码格式 默认utf8
+// 参数4： 回调函数
+fs.writeFile(&quot;./files/1.txt&quot;, &quot;这里是WriteFile函数&quot;, function (err) {
+  if (err) {
+    console.log(&quot;写入失败&quot;);
+  } else {
+    console.log(&quot;写入成功&quot;);
+  }
+});
+
+</code></pre>
+<h4 id="-">一个写入的小例子</h4>
+<pre><code class="lang-js">// 1.导入 fs模块 来操作文件
+const fs = require(&quot;fs&quot;);
+
+// 2.读取文件内容
+fs.readFile(&quot;./files/1.txt&quot;, &quot;utf8&quot;, function (err, data) {
+  if (err) {
+    return console.log(&quot;读取文件失败&quot; + err.message);
+  } else {
+    console.log(&quot;读取文件成功!&quot; + data);
+  }
+  //   3.分割成绩数据
+  const arrOld = data.split(&quot; &quot;);
+  const arrNew = [];
+  arrOld.forEach((item) =&gt; {
+    arrNew.push(item.replace(&quot;=&quot;, &quot;:&quot;));
+  });
+  //   4.合并写入目标文件
+  const newStr = arrNew.join(&quot;\r\n&quot;);
+  fs.writeFile(&quot;./files/2.txt&quot;, newStr, function (err) {
+    if (err) {
+      return console.log(&quot;写入失败&quot; + err.message);
+    }
+    console.log(&quot;写入成功&quot;);
+  });
+});
+
+</code></pre>
+<h3 id="-">路径动态拼接</h3>
+<p><strong>代码在运行，会执行node命令所处的目录</strong></p>
+<ul>
+<li><p>解决方法一： 绝对路径代替相对路径</p>
+<p>缺点 ：移植性非常差 不利于维护</p>
+</li>
+<li><p>解决方法二：<strong>__dirname</strong></p>
+<p>​    __dirname 表示的当前文件所处的目录</p>
+</li>
+</ul>
+<pre><code class="lang-js">// 1.导入 fs模块 来操作文件
+const fs = require(&quot;fs&quot;);
+const path = require(&quot;path&quot;);
+// 2.调用fs 的writeFile函数 写入文件的内容
+// 参数1：表示文件的存放路径
+// 参数2：表示写入的内容
+// 参数3: 编码格式 默认utf8
+// 参数4： 回调函数
+fs.writeFile(
+  path.join(__dirname, &quot;./files/2.txt&quot;),
+  &quot;这里是WriteFile函数&quot;,
+  function (err) {
+    if (err) {
+      console.log(&quot;写入失败&quot; + err.message);
+    } else {
+      console.log(&quot;写入成功&quot;);
+    }
+  }
+);
+
+</code></pre>
+<h2 id="ps-">PS模块</h2>
+<h3 id="path-join-">path.join() 函数 路径拼接</h3>
+<p><strong>用来处理路径的模块</strong></p>
+<p><strong>path.join()来进行路径拼接</strong></p>
+<pre><code class="lang-js">const path = require(&quot;path&quot;);
+// ../会抵消掉一层路径
+const pathStr = path.join(&quot;/home&quot;, &quot;/hexian/c&quot;, &quot;../&quot;, &quot;/NODE_练习&quot;);
+console.log(pathStr); // /home/hexian/NODE_练习
+const pathStr2 = path.join(__dirname, &quot;./files/1.txt&quot;);
+console.log(pathStr2); // /home/hexian/Node_练习/files/1.txt
+
+</code></pre>
+<h3 id="path-basename-extname-">path. basename（）、extname()求文件名 文件后缀 函数函数</h3>
+<p>第二个参数为可选参数，如果不设置则输出名字+格式</p>
+<pre><code class="lang-js">const path = require(&quot;path&quot;);
+
+// 定义一个文件的存放路径
+const fpath = &quot;/home/hexian/Node_练习/files/1.txt&quot;;
+
+const fullName = path.basename(fpath);
+console.log(fullName); // 1.txt
+
+const nameWithoutExt = path.basename(fpath, &quot;.txt&quot;);
+console.log(nameWithoutExt); //1
+
+const Ext = path.extname(fpath);
+console.log(Ext); //txt
+
+</code></pre>
+<h2 id="http-">HTTP 模块</h2>
+<h3 id="-web-">创建基本的web服务器</h3>
+<pre><code class="lang-js">// 1.导入http模块
+const http = require(&quot;http&quot;);
+// 2.创建web服务器实例
+const server = http.createServer();
+// 3.为服务器绑定request时间，监听客服端的请求
+server.on(&quot;request&quot;, function (req, res) {
+  console.log(&quot;有人访问了服务器&quot;);
+});
+// 4.启动服务器
+server.listen(8080, function () {
+  console.log(&quot;已经运行在本机的8080端口了&quot;);
+});
+//终止 ctrl+C
+</code></pre>
+<h3 id="request-">request 请求对象</h3>
+<p><strong>req返回的对象里 url属性为客户端请求的url地址，method属性为访问对象的方式</strong></p>
+<pre><code class="lang-js">// 1.导入http模块
+const http = require(&quot;http&quot;);
+// 2.创建web服务器实例
+const server = http.createServer();
+// 3.为服务器绑定request时间，监听客服端的请求
+server.on(&quot;request&quot;, (req) =&gt; {
+  // 获取客户端请求的url地址
+  const url = req.url;
+  //  获取客户端请求的方式
+  const method = req.method;
+  console.log(`有人访问了服务器，请求的地址是${url}方式是${method}`);
+});
+// 4.启动服务器
+server.listen(8080, function () {
+  console.log(&quot;server running at http://127.0.0.1:8080&quot;);
+});
+
+</code></pre>
+<p><strong>response相应对象</strong></p>
+<p><strong>调用res.end()向客户端相应一些内容</strong></p>
+<p>### </p>
+<pre><code class="lang-js">// 1.导入http模块
+const http = require(&quot;http&quot;);
+// 2.创建web服务器实例
+const server = http.createServer();
+// 3.为服务器绑定request时间，监听客服端的请求
+server.on(&quot;request&quot;, (req, res) =&gt; {
+  // 获取客户端请求的url地址
+  const url = req.url;
+  //  获取客户端请求的方式
+  const method = req.method;
+  const str = `有人访问了服务器，请求的地址是${url}方式是${method}`;
+  //   调用res.end()向客户端相应一些内容
+  res.end(str);
+});
+// 4.启动服务器
+server.listen(8080, function () {
+  console.log(&quot;server running at http://127.0.0.1:8080&quot;);
+});
+
+</code></pre>
+<h3 id="-">解决中文乱码</h3>
+<p><strong>重新设置响应头 解决中文乱码格式</strong></p>
+<pre><code class="lang-js">  res.setHeader(&quot;Content-Type&quot;, &quot;text/html; charset=utf-8&quot;);
+
+</code></pre>
+<h3 id="-url-html-">根据不同url相应不同的html内容</h3>
+<pre><code class="lang-js">const http = require(&quot;http&quot;);
+
+const server = http.createServer();
+
+server.on(&quot;request&quot;, (req, res) =&gt; {
+  //1.获取请求的url地址
+  const url = req.url;
+  //2. 默认设置 404NotFonud
+  let content = &quot;&lt;h1&gt; 404 Not Found&lt;/h1&gt;&quot;;
+  //3. 判断用户请求的页面
+  if (url == &quot;/&quot; || url == &quot;/index.html&quot;) {
+    content = &quot;&lt;h1&gt;首页&lt;/h1&gt;&quot;;
+  } else if (url == &quot;/about.html&quot;) {
+    content = &quot;&lt;h1&gt;关于页面&lt;/h1&gt;&quot;;
+  }
+  //4.设置响应体
+  res.setHeader(&quot;Content-Type&quot;, &quot;text/html; charset=utf-8&quot;);
+  // 5.返回对象
+  res.end(content);
+});
+
+server.listen(8080, () =&gt; {
+  console.log(&quot;server running at http://127.0.0.1:8080&quot;);
+});
+
+</code></pre>
+<h2 id="node-js-">Node.js 中的模块化</h2>
+<h3 id="module-">module对象</h3>
+<p><strong>首先看下module对象里面有什么</strong></p>
+<pre><code class="lang-js">Module {
+  id: &#39;.&#39;,
+  path: &#39;/home/hexian/Node_练习&#39;,
+  exports: {},//借助exports 将模块内的对象共享出去
+  filename: &#39;/home/hexian/Node_练习/11模块化.js&#39;,
+  loaded: false,
+  children: [],
+  paths: [
+    &#39;/home/hexian/Node_练习/node_modules&#39;,
+    &#39;/home/hexian/node_modules&#39;,
+    &#39;/home/node_modules&#39;,
+    &#39;/node_modules&#39;
+  ]
+}
+</code></pre>
+<p>exports可以将模块内的成员共享除去 </p>
+<p>外界用require方法导入自定义模块                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       </p>
+<p><strong>module.exports</strong>默认情况为空</p>
+<h4 id="-">向外共享</h4>
+<pre><code class="lang-js">
+const anthorName = &quot;hexian&quot;;
+module.exports.username = anthorName;
+module.exports.sayHello = function () {
+  console.log(&quot;Hello&quot;);
+};
+// module.exports ={ } (默认情况)
+
+</code></pre>
+<h4 id="-">其余引入</h4>
+<pre><code class="lang-js">// 引入自定义模块
+const self_defined = require(&quot;./11模块化&quot;);
+console.log(self_defined);
+//{ username: &#39;hexian&#39;, sayHello: [Function (anonymous)] } 输出结果
+
+</code></pre>
+<h3 id="exports-">exports对象</h3>
+<p><strong>默认情况下，exports和module.exports指向同一个对象,最终共享结果，还是以module。exports指向的对象为准</strong></p>
+<h2 id="npm-">npm工具与包</h2>
+<h3 id="-">常用</h3>
+<p>设置淘宝镜像源（我不需要）</p>
+<pre><code class="lang-js">npm install -g cnpm --registry=https://registry.npmmirror.com
+</code></pre>
+<p>查看当前的npm基础信息</p>
+<pre><code class="lang-js">npm config list    
+</code></pre>
+<h3 id="-">创建模块</h3>
+<p>创建模块，package.json 文件是必不可少的。我们可以使用 NPM 生成 package.json 文件，生成的文件包含了基本的结果。</p>
+<pre><code>$ npm init
+This utility will walk you through creating a package.json file.
+It only covers the most common items, and tries to guess sensible defaults.
+
+See `npm help json` for definitive documentation on these fields
+and exactly what they do.
+
+Use `npm install &lt;pkg&gt; --save` afterwards to install a package and
+save it as a dependency in the package.json file.
+
+Press ^C at any time to quit.
+name: (node_modules) runoob                   # 模块名
+version: (1.0.0) 
+description: Node.js 测试模块(www.runoob.com)  # 描述
+entry point: (index.js) 
+test command: make test
+git repository: https://github.com/runoob/runoob.git  # Github 地址
+keywords: 
+author: 
+license: (ISC) 
+About to write to ……/node_modules/package.json:      # 生成地址
+
+{
+  &quot;name&quot;: &quot;runoob&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;description&quot;: &quot;Node.js 测试模块(www.runoob.com)&quot;,
+  ……
+}
+
+
+Is this ok? (yes) yes
+</code></pre><p>以上的信息，你需要根据你自己的情况输入。在最后输入 &quot;yes&quot; 后会生成 package.json 文件。</p>
+<p>接下来我们可以使用以下命令在 npm 资源库中注册用户（使用邮箱注册）：</p>
+<h3 id="-">包管理配置文件</h3>
+<p><strong>快速创建 package.json</strong></p>
+<pre><code class="lang-js">npm init -y
+</code></pre>
+<p><em>项目名不要包含中文与空格</em></p>
+<h3 id="-node_module">如何一次安装所有的node_module</h3>
+<pre><code>npm install 
+</code></pre><p>运行时，npm会读取当前目录的package.json</p>
+<p>上记录的所有依赖包</p>
+<h3 id="devdependencies-">devDependencies节点</h3>
+<p><strong>又名开发依赖包</strong></p>
+<p><em>dependencies节点 核心依赖包</em></p>
+<p>某些包只在开发阶段用而上线后不用则应放入这样节点中</p>
+<pre><code class="lang-js">npm i 包名 -D
+npm install 包名 --save-dev
+</code></pre>
+<h3 id="nrm-">nrm工具</h3>
+<p>（更方便的镜像源切换）</p>
+<p><strong>nrm ls </strong></p>
+<pre><code>
+  npm ---------- https://registry.npmjs.org/
+  yarn --------- https://registry.yarnpkg.com/
+  tencent ------ https://mirrors.cloud.tencent.com/npm/
+  cnpm --------- https://r.cnpmjs.org/
+  taobao ------- https://registry.npmmirror.com/
+  npmMirror ---- https://skimdb.npmjs.com/registry/
+
+</code></pre><p><strong>nrm use 镜像源</strong></p>
+
+          	</article>
+        </div>
+		</div>
+  </body>
+</html>
+<script type="text/javascript" src="toc/js/jquery-1.4.4.min.js"></script>
+<script type="text/javascript" src="toc/js/jquery.ztree.all-3.5.min.js"></script>
+<script type="text/javascript" src="toc/js/ztree_toc.js"></script>
+<script type="text/javascript" src="toc_conf.js"></script>
+
+<SCRIPT type="text/javascript" >
+<!--
+$(document).ready(function(){
+    var css_conf = eval(markdown_panel_style);
+    $('#readme').css(css_conf)
+    
+    var conf = eval(jquery_ztree_toc_opts);
+		$('#tree').ztree_toc(conf);
+});
+//-->
+</SCRIPT>
