@@ -66,6 +66,7 @@
         <div id='readme' style='width:70%;margin-left:20%;'>
           	<article class='markdown-body'>
             	<h1 id="nodejs-">Nodejs基础复习</h1>
+<p><em>nodemon可以帮助代码自动更新</em></p>
 <h2 id="fs-">Fs模块</h2>
 <h3 id="readfile-">readFile方法获取文件</h3>
 <pre><code class="lang-js">// 1.导入 fs模块 来操作文件
@@ -392,6 +393,217 @@ npm install 包名 --save-dev
   npmMirror ---- https://skimdb.npmjs.com/registry/
 
 </code></pre><p><strong>nrm use 镜像源</strong></p>
+<h2 id="-">发布自己的包</h2>
+<h3 id="-">开发属于自己的包</h3>
+<ul>
+<li><p>需要实现的功能</p>
+</li>
+<li><p>初始化包的基本结构</p>
+<pre><code>  有包的根目录
+  存在
+ - package.json文件（包管理配置文件）
+ - index.js （包的入口文件）
+ - README.md（包的说明文件）
+</code></pre></li>
+<li><p>初始化package.json文件</p>
+</li>
+</ul>
+<h3 id="-">发布一个包</h3>
+<ul>
+<li><p>在终端登录自己npm账号</p>
+<pre><code class="lang-js">npm login // 先切换回官方镜像源
+</code></pre>
+</li>
+<li><p>进入项目根目录 </p>
+<pre><code class="lang-js">npm publish
+</code></pre>
+</li>
+<li><p>删除已经发布的包</p>
+<pre><code class="lang-js">      npm unpubilsh 
+</code></pre>
+</li>
+</ul>
+<h2 id="-">模块加载机制</h2>
+<ul>
+<li><p><strong>模块在第一次加载后就会被缓存</strong></p>
+</li>
+<li><p><strong>内置模块的加载优先级是最高的</strong></p>
+</li>
+<li><p><strong>自定义模块加载必须需要有路径标识符</strong>/</p>
+</li>
+</ul>
+<h2 id="express-">Express框架</h2>
+<h3 id="express-">Express的基本使用(请求篇)</h3>
+<h4 id="request-query-">request的 query对象</h4>
+<p><strong>通过req.query可以获取客户端发送过来的查询对象</strong></p>
+<p>例如</p>
+<pre><code class="lang-js">// 1.导入 express
+const express = require(&quot;express&quot;);
+// 2.创建web服务器
+const app = express();
+app.get(&quot;/&quot;, (req, res) =&gt; {
+  // 通过req.query可以获取客户端发送过来的查询对象
+  // req默认为空
+  console.log(req.query);
+  res.send(req.query);
+});
+// 3.启动web服务器
+app.listen(8081, () =&gt; {
+  console.log(&quot;服务器运行在：http://127.0.0.1:8081&quot;);
+});
+</code></pre>
+<p>对其发送请求</p>
+<pre><code>http://127.0.0.1:8081?name=hexian&amp;age=20
+</code></pre><p>得到结果</p>
+<pre><code class="lang-js">{
+    &quot;name&quot;: &quot;hexian&quot;,
+    &quot;age&quot;: &quot;20&quot;
+}//无查询条件默认为空
+</code></pre>
+<h4 id="-url-">如何获取URL中的动态参数</h4>
+<p>例</p>
+<pre><code class="lang-js">// 这里的id是一个动态参数可以是任意值
+app.get(&quot;/user/:id&quot;, (req, res) =&gt; {
+  console.log(req.params);
+  res.send(req.params);
+});
+</code></pre>
+<p>发送请求</p>
+<pre><code class="lang-js">http://127.0.0.1:8081/user/2
+</code></pre>
+<p>得到结果</p>
+<pre><code class="lang-js">{
+    &quot;id&quot;: &quot;2&quot;
+}
+</code></pre>
+<p><em>可以获取多个动态参数</em></p>
+<h3 id="express-">Express托管静态资源</h3>
+<p><strong>static()方法指定静态资源目录</strong></p>
+<p>示例代码</p>
+<pre><code class="lang-js">const express = require(&quot;express&quot;);
+const app = express();
+
+app.use(express.static(&quot;./public&quot;));
+
+app.listen(8080, () =&gt; {
+  console.log(&quot;http://127.0.0.1:8080&quot;);
+});
+
+</code></pre>
+<p><strong>被开放静态资源目录结构</strong></p>
+<pre><code class="lang-tree">./public/
+ └── cartoon.jpg
+</code></pre>
+<p><strong>发送请求</strong></p>
+<pre><code>http://127.0.0.1:8080/cartoon.jpg
+</code></pre><p><em>被设置为静态资源的目录不会出现在路径中</em></p>
+<p><strong>可同时托管多个静态资源目录，只需多次调用static方法即可</strong></p>
+<ul>
+<li>如果需要增加访问路径前缀 ,则只需要增加一个路径参数即可</li>
+</ul>
+<p>例如</p>
+<pre><code class="lang-js">const express = require(&quot;express&quot;);
+const app = express();
+
+app.use(&quot;/public&quot;, express.static(&quot;./public&quot;));
+
+app.listen(8080, () =&gt; {
+  console.log(&quot;http://127.0.0.1:8080&quot;);
+});
+
+</code></pre>
+<pre><code>http://127.0.0.1:8080/public/cartoon.jpg //访问路径
+
+</code></pre><h3 id="express-">Express 路由</h3>
+<p>Express不建议将路由直接挂载到app上，而推荐将路由抽离为单独的模块</p>
+<ol>
+<li>创建路由模块对应的.js文件</li>
+<li>调用express.Router()函数创建路有对象</li>
+<li>向路由对象上挂载具体的路由</li>
+<li>使用module.exports向外共享路由对象</li>
+<li><p>使用app.use()函数注册路由模块</p>
+<p><strong>路由模块对应的.js文件</strong></p>
+</li>
+</ol>
+<pre><code>const express = require(&quot;express&quot;);
+
+const router = express.Router();
+
+router.get(&quot;/user/list&quot;, (req, res) =&gt; {
+  res.send(&quot;Get user list&quot;);
+});
+router.post(&quot;/user/add&quot;, (req, res) =&gt; {
+  res.send(&quot;Add new user&quot;);
+});
+module.exports = router;
+
+</code></pre><p><strong>导入路由模块</strong></p>
+<pre><code class="lang-js">const express = require(&quot;express&quot;);
+const app = express();
+
+// 1.导入路由模块
+const router = require(&quot;./15路由对象&quot;);
+
+app.use(router);
+
+app.listen(8081, () =&gt; {
+  console.log(&quot;http://127.0.0.1:8081&quot;);
+});
+
+</code></pre>
+<p>*<em>为路由模块添加访问前缀和挂载静态资源时的操作一致</em></p>
+<h3 id="express-">Express中间件</h3>
+<p><em>本质是一个function处理函数</em></p>
+<p><strong>全局生效的中间件</strong></p>
+<blockquote>
+<p>通过app.use将中间件注册为全局生效</p>
+</blockquote>
+<pre><code class="lang-js">const express = require(&quot;express&quot;);
+
+const app = express();
+
+const mv = function (req, res, next) {
+  console.log(&quot;这是最简单的中间件函数&quot;);
+  next();
+};
+
+// 将mv注册为全局生效的中间件
+app.use(mv);
+
+app.get(&quot;/&quot;, (req, res) =&gt; {
+  res.send(&quot;Home Page&quot;);
+});
+app.get(&quot;/user&quot;, (req, res) =&gt; {
+  res.send(&quot;user Page&quot;);
+});
+app.listen(8081, () =&gt; {
+  console.log(&quot;http://127.0.0.1:8081&quot;);
+});
+
+</code></pre>
+<p><strong>简化形式</strong></p>
+<pre><code class="lang-js">app.use((req, res, next) =&gt; {
+  console.log(&quot;中间件运行&quot;);
+  next();
+});
+</code></pre>
+<p><strong>中间件的作用</strong></p>
+<blockquote>
+<p>多个中间件共享一个req与res</p>
+</blockquote>
+<p>例如</p>
+<pre><code class="lang-js">app.use((req, res, next) =&gt; {
+  console.log(&quot;中间件运行&quot;);
+  const time = Date.now();
+  req.require_time = time;
+  next();
+});
+</code></pre>
+<p>后序路由则可以直接从req或res中获取上游设置的属性</p>
+<pre><code class="lang-js">app.get(&quot;/&quot;, (req, res) =&gt; {
+  res.send(&quot;Home Page&quot; + req.require_time);
+});
+</code></pre>
 
           	</article>
         </div>

@@ -1,5 +1,7 @@
 # Nodejs基础复习
 
+*nodemon可以帮助代码自动更新*
+
 ## Fs模块
 
 ### readFile方法获取文件
@@ -476,5 +478,560 @@ npm install 包名 --save-dev
 - **内置模块的加载优先级是最高的**
 
 - **自定义模块加载必须需要有路径标识符**/
+
+## Express框架
+
+### Express的基本使用(请求篇)
+
+#### request的 query对象
+
+**通过req.query可以获取客户端发送过来的查询对象**
+
+例如
+
+```js
+// 1.导入 express
+const express = require("express");
+// 2.创建web服务器
+const app = express();
+app.get("/", (req, res) => {
+  // 通过req.query可以获取客户端发送过来的查询对象
+  // req默认为空
+  console.log(req.query);
+  res.send(req.query);
+});
+// 3.启动web服务器
+app.listen(8081, () => {
+  console.log("服务器运行在：http://127.0.0.1:8081");
+});
+```
+
+对其发送请求
+
+```
+http://127.0.0.1:8081?name=hexian&age=20
+```
+
+得到结果
+
+```js
+{
+    "name": "hexian",
+    "age": "20"
+}//无查询条件默认为空
+```
+
+#### 如何获取URL中的动态参数
+
+例
+
+```js
+// 这里的id是一个动态参数可以是任意值
+app.get("/user/:id", (req, res) => {
+  console.log(req.params);
+  res.send(req.params);
+});
+```
+
+发送请求
+
+```js
+http://127.0.0.1:8081/user/2
+```
+
+得到结果
+
+```js
+{
+    "id": "2"
+}
+```
+
+*可以获取多个动态参数*
+
+### Express托管静态资源
+
+**static()方法指定静态资源目录**
+
+示例代码
+
+```js
+const express = require("express");
+const app = express();
+
+app.use(express.static("./public"));
+
+app.listen(8080, () => {
+  console.log("http://127.0.0.1:8080");
+});
+
+```
+
+**被开放静态资源目录结构**
+
+```tree
+./public/
+ └── cartoon.jpg
+```
+
+**发送请求**
+
+```
+http://127.0.0.1:8080/cartoon.jpg
+```
+
+*被设置为静态资源的目录不会出现在路径中*
+
+**可同时托管多个静态资源目录，只需多次调用static方法即可**
+
+
+
+- 如果需要增加访问路径前缀 ,则只需要增加一个路径参数即可
+
+例如
+
+```js
+const express = require("express");
+const app = express();
+
+app.use("/public", express.static("./public"));
+
+app.listen(8080, () => {
+  console.log("http://127.0.0.1:8080");
+});
+
+```
+
+```
+http://127.0.0.1:8080/public/cartoon.jpg //访问路径
+
+```
+
+
+
+### Express 路由
+
+Express不建议将路由直接挂载到app上，而推荐将路由抽离为单独的模块
+
+1. 创建路由模块对应的.js文件
+2. 调用express.Router()函数创建路有对象
+3. 向路由对象上挂载具体的路由
+4. 使用module.exports向外共享路由对象
+5. 使用app.use()函数注册路由模块
+
+  **路由模块对应的.js文件**
+
+```
+const express = require("express");
+
+const router = express.Router();
+
+router.get("/user/list", (req, res) => {
+  res.send("Get user list");
+});
+router.post("/user/add", (req, res) => {
+  res.send("Add new user");
+});
+module.exports = router;
+
+```
+
+**导入路由模块**
+
+```js
+const express = require("express");
+const app = express();
+
+// 1.导入路由模块
+const router = require("./15路由对象");
+
+app.use(router);
+
+app.listen(8081, () => {
+  console.log("http://127.0.0.1:8081");
+});
+
+```
+
+**为路由模块添加访问前缀和挂载静态资源时的操作一致*
+
+### Express中间件
+
+*本质是一个function处理函数*
+
+#### **全局生效的中间件**
+
+> 通过app.use将中间件注册为全局生效
+
+
+
+```js
+const express = require("express");
+
+const app = express();
+
+const mv = function (req, res, next) {
+  console.log("这是最简单的中间件函数");
+  next();
+};
+
+// 将mv注册为全局生效的中间件
+app.use(mv);
+
+app.get("/", (req, res) => {
+  res.send("Home Page");
+});
+app.get("/user", (req, res) => {
+  res.send("user Page");
+});
+app.listen(8081, () => {
+  console.log("http://127.0.0.1:8081");
+});
+
+```
+
+**简化形式**
+
+```js
+app.use((req, res, next) => {
+  console.log("中间件运行");
+  next();
+});
+```
+
+
+
+**中间件的作用**
+
+> 多个中间件共享一个req与res
+
+例如
+
+```js
+app.use((req, res, next) => {
+  console.log("中间件运行");
+  const time = Date.now();
+  req.require_time = time;
+  next();
+});
+```
+
+
+
+后序路由则可以直接从req或res中获取上游设置的属性
+
+```js
+app.get("/", (req, res) => {
+  res.send("Home Page" + req.require_time);
+});//Home Page1641721037593
+```
+
+
+
+#### 局部生效中间件
+
+> 不适用app.use方法注册的中间件
+
+```js
+
+const mw1 = (req, res, next) => {
+  console.log("局部生效");
+  next();
+};
+app.get("/", mw1, (req, res) => {
+  res.send("Home Page");
+});
+```
+
+**在一个路由中可以挂载多个局部中间件，可用逗号分隔或[A,B,C]等形式**
+
+**注意**
+
+1. 一定要在路由之前注册中间件
+2. 中间件必须调用next()函数
+3. next()后不要在写额外代码了
+4. 连续调用多个中间件 他们req与res共享
+
+#### 中间件的分类
+
+1. **应用级别的中间件**
+
+   绑定到app实例上的中间件
+
+2. **路由级别的中间件**
+
+   绑定到exports.Router()实例上的中间件
+
+3. **错误级别的中间件**
+
+   > 必须注册在所有的路由之后
+
+   例如：
+
+   
+
+   ```
+   app.get("/user", (req, res) => {
+     // 人为制造错误
+     throw new Error("这是一个错误");
+     res.send("User Page");
+   });
+   
+   ```
+
+   ```js
+   // 定义错误级别的中间件，捕获整个项目的异常错误，防止程序的崩溃
+   app.use((err, req, res, next) => {
+     console.log("发生了错误" + err.message);
+     res.send("Error:" + err.message);
+   });
+   ```
+
+   
+
+4. **Express内置中间件**
+
+   1. express.static 托管静态资源
+
+      ```js
+      const express = require("express");
+      const app = express();
+      
+      app.use("/public", express.static("./public"));
+      
+      app.listen(8080, () => {
+        console.log("http://127.0.0.1:8080");
+      });
+      
+      ```
+
+      
+
+   2. express.json解析JSON格式的请求提数据
+
+      ```js
+      const express = require("express");
+      
+      const app = express();
+      
+      //解析表单中的JSON格式数据
+      app.use(express.json());
+      app.post("/user", (req, res) => {
+        // 在玩服务器中可以使用req.body属性接受客户端发送过来的请求体数据
+        console.log(req.body);
+        const resContent = req.body;
+        res.send(resContent);
+      });
+      
+      ```
+
+      
+
+   3. express.urlencoded解析URL-encoded格式请求体数据
+
+      ```js
+      const express = require("express");
+      
+      const app = express();
+      //解析urlencoded格式的数据 固定写法
+      app.use(express.urlencoded({ extended: false }));
+      
+      app.post("/book", (req, res) => {
+        console.log(req.body);
+        res.send(req.body);
+      });
+      app.listen(8081, () => {
+        console.log("http://127.0.0.1:8081");
+      });
+      
+      ```
+
+      
+
+5. **第三方的中间件** 
+
+   
+
+6. **自定义中间件**(重要)
+
+   ```js
+   const express = require("express");
+   
+   const app = express();
+   
+   // querystring 模块 解析请求体数据
+   const querystring = require("querystring");
+   
+   // 这是解析表单数据的中间件
+   app.use((req, res, next) => {
+     // 定义中间件具体的业务逻辑
+     let str = "";
+     // data事件 当有数据传输过来时 就会触发 data量大的话 data事件会触发好几次
+     req.on("data", (chunk) => {
+       // 拼接请求体数据 隐式转换为字符串
+       str += chunk;
+     });
+     // end事件，当data传输完毕时 就会触发end事件
+     req.on("end", () => {
+       // 在str中存放的是完整的请求体数据
+       // console.log(str);
+       // 把字符串格式的请求体数据解析成对象格式
+       const body = querystring.parse(str);
+       console.log(body);
+     });
+   });
+   
+   app.post("/user", () => {});
+   app.listen(8081, () => {
+     console.log("http://127.0.0.1:8081");
+   });
+   
+   ```
+
+### 跨域请求问题
+
+   **CORS**
+
+1. 运行npm install cors 安装中间件
+
+2. 导入中间件
+
+      ```js
+      // 一定要在路由模块引入之前配置cors模块 从而解决接口跨域请求问题
+      const cors = require("cors");
+      ```
+
+3. 使用中间件
+
+   ```js
+   app.use(cors());
+   ```
+
+   
+
+## MYSQL （Linux学习）
+
+
+
+*选择稳定版本，5.6拥有较完善的文档以及活跃的社区，在性能上5.6的性能也有了大幅提升*
+
+### MYSQL安装
+
+### rpm安装
+
+**需要手段解决依赖**
+
+```js
+4个软件包依赖
+mysql-client
+mysql-devel
+mysql-server
+mysql-shared
+// 进入镜像资源网站 wget对应资源即可
+```
+
+*不建议使用*
+
+### yum安装
+
+```
+yum install mariadb-server mariadb
+```
+
+> 如果需要下载指定版本 需要查询对应的mysql版本的yum下载源
+
+### apt-get安装
+
+1. 安装服务端
+
+   ```
+   sudo apt-get install mysql-server
+   ```
+
+   
+
+2. 安装客服端
+
+   ```
+   sudo apt-get install mysql-client
+   ```
+
+   
+
+3. 安装编译时链接的库
+
+   ```
+   sudo apt-get install libmysqlclient-dev
+   ```
+
+   
+
+### 编译安装
+
+### 安装时一些踩过的坑
+
+#### 1.误删/etc/mysql文件
+
+**原因**
+
+如果你因为觉得mysql不好用或者忘记密码等原因，因而删除了自己的/etc/mysql文件，那么在你下一次安装这类包的时候，系统会判定："哦，这家伙不想要/etc/mysql 这个文件（因为他曾经删除了），但是mysql需要，那好吧，你的想法优先，我报错。"
+
+**解决**
+
+你应该备份你的数据库，你可以试着清除所有mysql相关包(特别是mysql-common mariadb-server - *和/或mysql服务器- *)并重新安装它们。注意,只是删除包是没有用的，因为dpkg将保留您的本地修改/etc/mysql/设计。
+
+那么以下是我的操作步骤
+
+- 卸载以往的版本
+
+  ```
+  sudo apt-get remove --purge mysql-\*
+  sudo apt-get autoremove --purge mysql-server
+  sudo apt-get remove mysql-common
+  ```
+
+- 清除数据缓存
+
+  ```
+  dpkg -l |grep ^rc|awk '{print $2}' |sudo xargs dpkg -P
+  ```
+
+  
+
+- 查看MySQL的剩余依赖项
+
+  ```
+  dpkg --list|grep mysql//如果有 则将依赖项删除
+  sudo apt-get autoremove --purge mysql-apt-config
+  ```
+
+  
+
+- 更新软件源
+
+  ```
+  sudo apt-get update
+  ```
+  
+  
+  
+  *随后就可以重新安装了*
+  
+  
+  
+  **测试**
+  
+  检测有没有安装成功
+  
+  ```
+  sudo netstat -tap|grep mysql
+  ```
+  
+  
+#### 2.mysql密码是什么来着？
+
+有时候我们会忘记某个用户的账户以及密码，这时我们需要停止mysql服务，修改my.cnf文件，重新启动后跟新对应用户的密码，最后不要忘记把my.cnf文件修改回去
+
+   
 
   
