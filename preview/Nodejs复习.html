@@ -65,7 +65,7 @@
 				</div>
         <div id='readme' style='width:70%;margin-left:20%;'>
           	<article class='markdown-body'>
-            	<h1 id="nodejs-">Nodejs基础复习</h1>
+            	<h1 id="nodejs-">Nodejs基础复习（作者：何贤）</h1>
 <p><em>nodemon可以帮助代码自动更新</em></p>
 <h2 id="fs-">Fs模块</h2>
 <h3 id="readfile-">readFile方法获取文件</h3>
@@ -554,7 +554,7 @@ app.listen(8081, () =&gt; {
 <p>*<em>为路由模块添加访问前缀和挂载静态资源时的操作一致</em></p>
 <h3 id="express-">Express中间件</h3>
 <p><em>本质是一个function处理函数</em></p>
-<p><strong>全局生效的中间件</strong></p>
+<h4 id="-"><strong>全局生效的中间件</strong></h4>
 <blockquote>
 <p>通过app.use将中间件注册为全局生效</p>
 </blockquote>
@@ -602,8 +602,300 @@ app.listen(8081, () =&gt; {
 <p>后序路由则可以直接从req或res中获取上游设置的属性</p>
 <pre><code class="lang-js">app.get(&quot;/&quot;, (req, res) =&gt; {
   res.send(&quot;Home Page&quot; + req.require_time);
+});//Home Page1641721037593
+</code></pre>
+<h4 id="-">局部生效中间件</h4>
+<blockquote>
+<p>不适用app.use方法注册的中间件</p>
+</blockquote>
+<pre><code class="lang-js">
+const mw1 = (req, res, next) =&gt; {
+  console.log(&quot;局部生效&quot;);
+  next();
+};
+app.get(&quot;/&quot;, mw1, (req, res) =&gt; {
+  res.send(&quot;Home Page&quot;);
 });
 </code></pre>
+<p><strong>在一个路由中可以挂载多个局部中间件，可用逗号分隔或[A,B,C]等形式</strong></p>
+<p><strong>注意</strong></p>
+<ol>
+<li>一定要在路由之前注册中间件</li>
+<li>中间件必须调用next()函数</li>
+<li>next()后不要在写额外代码了</li>
+<li>连续调用多个中间件 他们req与res共享</li>
+</ol>
+<h4 id="-">中间件的分类</h4>
+<ol>
+<li><p><strong>应用级别的中间件</strong></p>
+<p>绑定到app实例上的中间件</p>
+</li>
+<li><p><strong>路由级别的中间件</strong></p>
+<p>绑定到exports.Router()实例上的中间件</p>
+</li>
+<li><p><strong>错误级别的中间件</strong></p>
+<blockquote>
+<p>必须注册在所有的路由之后</p>
+</blockquote>
+<p>例如：</p>
+</li>
+</ol>
+<pre><code>   app.get(&quot;/user&quot;, (req, res) =&gt; {
+     // 人为制造错误
+     throw new Error(&quot;这是一个错误&quot;);
+     res.send(&quot;User Page&quot;);
+   });
+
+</code></pre><pre><code class="lang-js">   // 定义错误级别的中间件，捕获整个项目的异常错误，防止程序的崩溃
+   app.use((err, req, res, next) =&gt; {
+     console.log(&quot;发生了错误&quot; + err.message);
+     res.send(&quot;Error:&quot; + err.message);
+   });
+</code></pre>
+<ol start="4">
+<li><p><strong>Express内置中间件</strong></p>
+<ol>
+<li><p>express.static 托管静态资源</p>
+<pre><code class="lang-js">const express = require(&quot;express&quot;);
+const app = express();
+
+app.use(&quot;/public&quot;, express.static(&quot;./public&quot;));
+
+app.listen(8080, () =&gt; {
+  console.log(&quot;http://127.0.0.1:8080&quot;);
+});
+
+</code></pre>
+</li>
+</ol>
+</li>
+</ol>
+<ol start="2">
+<li><p>express.json解析JSON格式的请求提数据</p>
+<pre><code class="lang-js">const express = require(&quot;express&quot;);
+
+const app = express();
+
+//解析表单中的JSON格式数据
+app.use(express.json());
+app.post(&quot;/user&quot;, (req, res) =&gt; {
+  // 在玩服务器中可以使用req.body属性接受客户端发送过来的请求体数据
+  console.log(req.body);
+  const resContent = req.body;
+  res.send(resContent);
+});
+
+</code></pre>
+</li>
+</ol>
+<ol start="3">
+<li><p>express.urlencoded解析URL-encoded格式请求体数据</p>
+<pre><code class="lang-js">const express = require(&quot;express&quot;);
+
+const app = express();
+//解析urlencoded格式的数据 固定写法
+app.use(express.urlencoded({ extended: false }));
+
+app.post(&quot;/book&quot;, (req, res) =&gt; {
+  console.log(req.body);
+  res.send(req.body);
+});
+app.listen(8081, () =&gt; {
+  console.log(&quot;http://127.0.0.1:8081&quot;);
+});
+
+</code></pre>
+</li>
+</ol>
+<ol start="5">
+<li><strong>第三方的中间件</strong> </li>
+</ol>
+<ol start="6">
+<li><p><strong>自定义中间件</strong>(重要)</p>
+<pre><code class="lang-js">const express = require(&quot;express&quot;);
+
+const app = express();
+
+// querystring 模块 解析请求体数据
+const querystring = require(&quot;querystring&quot;);
+
+// 这是解析表单数据的中间件
+app.use((req, res, next) =&gt; {
+  // 定义中间件具体的业务逻辑
+  let str = &quot;&quot;;
+  // data事件 当有数据传输过来时 就会触发 data量大的话 data事件会触发好几次
+  req.on(&quot;data&quot;, (chunk) =&gt; {
+    // 拼接请求体数据 隐式转换为字符串
+    str += chunk;
+  });
+  // end事件，当data传输完毕时 就会触发end事件
+  req.on(&quot;end&quot;, () =&gt; {
+    // 在str中存放的是完整的请求体数据
+    // console.log(str);
+    // 把字符串格式的请求体数据解析成对象格式
+    const body = querystring.parse(str);
+    console.log(body);
+  });
+});
+
+app.post(&quot;/user&quot;, () =&gt; {});
+app.listen(8081, () =&gt; {
+  console.log(&quot;http://127.0.0.1:8081&quot;);
+});
+
+</code></pre>
+</li>
+</ol>
+<h3 id="-">跨域请求问题</h3>
+<p>   <strong>CORS</strong></p>
+<ol>
+<li><p>运行npm install cors 安装中间件</p>
+</li>
+<li><p>导入中间件</p>
+<pre><code class="lang-js">   // 一定要在路由模块引入之前配置cors模块 从而解决接口跨域请求问题
+   const cors = require(&quot;cors&quot;);
+</code></pre>
+</li>
+<li><p>使用中间件</p>
+<pre><code class="lang-js">app.use(cors());
+</code></pre>
+</li>
+</ol>
+<h2 id="mysql-linux-">MYSQL （Linux学习）</h2>
+<p><em>选择稳定版本，5.6拥有较完善的文档以及活跃的社区，在性能上5.6的性能也有了大幅提升</em></p>
+<h3 id="mysql-">MYSQL安装</h3>
+<h3 id="rpm-">rpm安装</h3>
+<p><strong>需要手段解决依赖</strong></p>
+<pre><code class="lang-js">4个软件包依赖
+mysql-client
+mysql-devel
+mysql-server
+mysql-shared
+// 进入镜像资源网站 wget对应资源即可
+</code></pre>
+<p><em>不建议使用</em></p>
+<h3 id="yum-">yum安装</h3>
+<pre><code>yum install mariadb-server mariadb
+</code></pre><blockquote>
+<p>如果需要下载指定版本 需要查询对应的mysql版本的yum下载源</p>
+</blockquote>
+<h3 id="apt-get-">apt-get安装</h3>
+<ol>
+<li><p>安装服务端</p>
+<pre><code>sudo apt-get install mysql-server
+</code></pre></li>
+</ol>
+<ol start="2">
+<li><p>安装客服端</p>
+<pre><code>sudo apt-get install mysql-client
+</code></pre></li>
+</ol>
+<ol start="3">
+<li><p>安装编译时链接的库</p>
+<pre><code>sudo apt-get install libmysqlclient-dev
+</code></pre></li>
+</ol>
+<h3 id="-">编译安装</h3>
+<h3 id="-">安装时一些踩过的坑</h3>
+<h4 id="1-etc-mysql-">1.误删/etc/mysql文件</h4>
+<p><strong>原因</strong></p>
+<p>如果你因为觉得mysql不好用或者忘记密码等原因，因而删除了自己的/etc/mysql文件，那么在你下一次安装这类包的时候，系统会判定：&quot;哦，这家伙不想要/etc/mysql 这个文件（因为他曾经删除了），但是mysql需要，那好吧，你的想法优先，我报错。&quot;</p>
+<p><strong>解决</strong></p>
+<p>你应该备份你的数据库，你可以试着清除所有mysql相关包(特别是mysql-common mariadb-server - <em>和/或mysql服务器- </em>)并重新安装它们。注意,只是删除包是没有用的，因为dpkg将保留您的本地修改/etc/mysql/设计。</p>
+<p>那么以下是我的操作步骤</p>
+<ul>
+<li><p>卸载以往的版本</p>
+<pre><code>sudo apt-get remove --purge mysql-\*
+sudo apt-get autoremove --purge mysql-server
+sudo apt-get remove mysql-common
+</code></pre></li>
+<li><p>清除数据缓存</p>
+<pre><code>dpkg -l |grep ^rc|awk &#39;{print $2}&#39; |sudo xargs dpkg -P
+</code></pre></li>
+</ul>
+<ul>
+<li><p>查看MySQL的剩余依赖项</p>
+<pre><code>dpkg --list|grep mysql//如果有 则将依赖项删除
+sudo apt-get autoremove --purge mysql-apt-config
+</code></pre></li>
+</ul>
+<ul>
+<li><p>更新软件源</p>
+<pre><code>sudo apt-get update
+</code></pre></li>
+</ul>
+<p>  <em>随后就可以重新安装了</em></p>
+<p>  <strong>测试</strong></p>
+<p>  检测有没有安装成功</p>
+<pre><code>  sudo netstat -tap|grep mysql
+</code></pre><h4 id="2-mysql-">2.mysql密码是什么来着？</h4>
+<p>有时候我们会忘记某个用户的账户以及密码，这时我们需要停止mysql服务，修改my.cnf文件，重新启动后跟新对应用户的密码，最后不要忘记把my.cnf文件修改回去</p>
+<ol>
+<li><p><strong>停止mysql服务</strong></p>
+<pre><code>service mysql stop
+</code></pre></li>
+</ol>
+<ol start="2">
+<li><strong>修改my.cnf文件</strong></li>
+</ol>
+<blockquote>
+<p>在某些版本中，原本的my.cnf文件引用了别的文件的软连接</p>
+<p>因此您需要下到对应的文件进而修改文本 内容</p>
+</blockquote>
+<pre><code>如Server version: 8.0.27-0ubuntu0.20.04.1 (Ubuntu)
+//文件目录为
+├── conf.d
+│   ├── mysql.cnf
+│   └── mysqldump.cnf
+├── debian.cnf
+├── debian-start
+├── my.cnf -&gt; /etc/alternatives/my.cnf //软连接
+├── my.cnf.fallback
+├── mysql.cnf
+└── mysql.conf.d
+    ├── mysql.cnf
+    └── mysqld.cnf //实际需要修改的目标文件
+
+
+</code></pre><ol start="3">
+<li><p><strong>重启mysql服务</strong></p>
+<pre><code>server mysql start
+</code></pre></li>
+</ol>
+<p>4.<strong>执行以下命令</strong></p>
+<pre><code>$ mysql
+
+# 选择mysql数据库
+mysql&gt; use mysql;
+
+# 更改user表中root用户密码
+mysql&gt; update user set authentication_string=PASSWORD(&quot;new_pass&quot;) where user=&#39;root&#39;;
+
+
+</code></pre><p>5.<strong>将my.cnf修改会原内容</strong></p>
+<h4 id="3-">3.未设置密码</h4>
+<blockquote>
+<p>有时候安装过程未出现密码设置的提示，安装完毕后无法知道登录任何一个User角色</p>
+</blockquote>
+<p><em>原因是因为在最近的Ubuntu安装（当然也可能是其他安装）中，MySQL默认使用了UNIX auth_socket plugin插件。</em></p>
+<pre><code>$ sudo mysql -u root # I had to use &quot;sudo&quot; since is new installation
+
+mysql&gt; USE mysql;
+mysql&gt; SELECT User, Host, plugin FROM mysql.user;
+
++------------------+-----------------------+
+| User             | plugin                |
++------------------+-----------------------+
+| root             | auth_socket           |
+| mysql.sys        | mysql_native_password |
+| debian-sys-maint | mysql_native_password |
++------------------+-----------------------+
+
+</code></pre><p><strong>这篇文章里有很多解决方法</strong></p>
+<p><a href="https://stackoverflow.com/questions/39281594/error-1698-28000-access-denied-for-user-rootlocalhost">https://stackoverflow.com/questions/39281594/error-1698-28000-access-denied-for-user-rootlocalhost</a></p>
+<p>而我的解决方法是，利用sudo特权登录到mysql中随后使用</p>
+<pre><code>ALTER USER &#39;root&#39;@&#39;localhost&#39; IDENTIFIED WITH mysql_native_password BY &#39;new-password&#39;;//更新密码
+</code></pre><p># </p>
 
           	</article>
         </div>

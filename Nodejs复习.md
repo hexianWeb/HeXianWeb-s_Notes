@@ -1,4 +1,4 @@
-# Nodejs基础复习
+# Nodejs基础复习（作者：何贤）
 
 *nodemon可以帮助代码自动更新*
 
@@ -1032,6 +1032,102 @@ yum install mariadb-server mariadb
 
 有时候我们会忘记某个用户的账户以及密码，这时我们需要停止mysql服务，修改my.cnf文件，重新启动后跟新对应用户的密码，最后不要忘记把my.cnf文件修改回去
 
+1. **停止mysql服务**
+
+   ```
+   service mysql stop
+   ```
+
    
 
-  
+2. **修改my.cnf文件**
+
+> 在某些版本中，原本的my.cnf文件引用了别的文件的软连接
+>
+> 因此您需要下到对应的文件进而修改文本 内容
+
+```
+如Server version: 8.0.27-0ubuntu0.20.04.1 (Ubuntu)
+//文件目录为
+├── conf.d
+│   ├── mysql.cnf
+│   └── mysqldump.cnf
+├── debian.cnf
+├── debian-start
+├── my.cnf -> /etc/alternatives/my.cnf //软连接
+├── my.cnf.fallback
+├── mysql.cnf
+└── mysql.conf.d
+    ├── mysql.cnf
+    └── mysqld.cnf //实际需要修改的目标文件
+
+
+```
+
+
+
+3. **重启mysql服务**
+
+   ```
+   server mysql start
+   ```
+
+4.**执行以下命令**
+
+```
+$ mysql
+
+# 选择mysql数据库
+mysql> use mysql;
+
+# 更改user表中root用户密码
+mysql> update user set authentication_string=PASSWORD("new_pass") where user='root';
+
+
+```
+
+5.**将my.cnf修改会原内容**
+
+
+
+
+
+#### 3.未设置密码
+
+> 有时候安装过程未出现密码设置的提示，安装完毕后无法知道登录任何一个User角色
+
+*原因是因为在最近的Ubuntu安装（当然也可能是其他安装）中，MySQL默认使用了UNIX auth_socket plugin插件。*
+
+
+
+```
+$ sudo mysql -u root # I had to use "sudo" since is new installation
+
+mysql> USE mysql;
+mysql> SELECT User, Host, plugin FROM mysql.user;
+
++------------------+-----------------------+
+| User             | plugin                |
++------------------+-----------------------+
+| root             | auth_socket           |
+| mysql.sys        | mysql_native_password |
+| debian-sys-maint | mysql_native_password |
++------------------+-----------------------+
+
+```
+
+
+
+**这篇文章里有很多解决方法**
+
+https://stackoverflow.com/questions/39281594/error-1698-28000-access-denied-for-user-rootlocalhost
+
+
+
+而我的解决方法是，利用sudo特权登录到mysql中随后使用
+
+```
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'new-password';//更新密码
+```
+
+# 
