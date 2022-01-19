@@ -907,7 +907,126 @@ app.get("/", mw1, (req, res) => {
    app.use(cors());
    ```
 
-   
+
+### Express 与 mysql
+
+#### 连接数据库以及验证
+
+
+
+````js
+// 导入mysql相关包
+const mysql = require("mysql");
+
+// 建立与数据库的连接
+const db = mysql.createPool({
+  host: "127.0.0.1",
+  user: "root",
+  password: "root",
+  database: "node_database",
+});
+
+// 监测是否正确连接
+db.query("select 1", (err, res) => {
+  if (err) {
+    console.log("连接异常" + err.message);
+  }
+  console.log(res);
+});
+
+
+````
+
+#### 查询语句
+
+```js
+// 导入mysql相关包
+const mysql = require("mysql");
+
+// 建立与数据库的连接
+const db = mysql.createPool({
+  host: "127.0.0.1",
+  user: "root",
+  password: "root",
+  database: "node_database",
+});
+const sql = "select * FROM user";
+
+db.query(sql, (err, res) => {
+  if (err) {
+    console.log("连接异常" + err.message);
+  }
+  console.log(res);
+});
+
+```
+
+#### 插入语句
+
+> 通过res返回的affectedRows作为判断依据来判断是否插入成功
+
+**方法一：朴素插入**
+
+```js
+// 导入mysql相关包
+const mysql = require("mysql");
+
+// 建立与数据库的连接
+const db = mysql.createPool({
+  host: "127.0.0.1",
+  user: "root",
+  password: "root",
+  database: "node_database",
+});
+const insert_sql =
+  "INSERT INTO `node_database`.`user` (`id`, `username`, `email`, `password`) VALUES ('4', 'two_test_man', '', '123456')";
+
+db.query(insert_sql, (err, res) => {
+  if (err) {
+    console.log("连接异常" + err.message);
+  }
+  if (res.affectedRows === 1) {
+    console.log("成功插入");
+  }
+});
+
+
+```
+
+**方法二：占位插入**
+
+```js
+const testMan3 = { username: "SpiderMan", password: "123456" };
+const insert_sql =
+  "INSERT INTO `node_database`.`user` ( `username`,`password`) VALUES ( ?,  ?)";//?占位 将由后面的数组元素依次替代
+
+db.query(insert_sql, [testMan3.username, testMan3.password], (err, res) => {
+  if (err) {
+    console.log("连接异常" + err.message);
+  } else if (res.affectedRows === 1) {
+    console.log("成功插入");
+  }
+}
+```
+
+**方法三：对象插入**
+
+```js
+//直接将数据对象当成占位符值
+const testMan4 = { username: "hexianMan", password: "123456" };
+const insert_sql2 = "INSERT INTO `node_database`.`user` SET ?";
+db.query(insert_sql2, testMan4, (err, res) => {
+  if (err) {
+    console.log("连接异常" + err.message);
+  } else if (res.affectedRows === 1) {
+    console.log("成功插入");
+  }
+})
+
+
+```
+
+
 
 ## MYSQL （Linux学习）
 
@@ -1130,4 +1249,179 @@ https://stackoverflow.com/questions/39281594/error-1698-28000-access-denied-for-
 ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'new-password';//更新密码
 ```
 
-# 
+## 基本常用指令
+
+### **1、查看mysql版本**
+
+
+
+```
+方法一：status;
+方法二：select version();
+```
+
+### **2、Mysql启动、停止、重启常用命令**
+
+
+
+#### 启动方式
+
+```
+1、使用 service 启动：
+[root@localhost /]# service mysqld start (5.0版本是mysqld)
+[root@szxdb etc]# service mysql start (5.5.7版本是mysql)
+
+2、使用 mysqld 脚本启动：
+/etc/inint.d/mysqld start
+
+3、使用 safe_mysqld 启动：
+safe_mysqld&
+```
+
+
+
+#### 停止方式
+
+```
+1、使用 service 启动：
+service mysqld stop
+
+2、使用 mysqld 脚本启动：
+/etc/inint.d/mysqld stop
+
+3、mysqladmin shutdown
+```
+
+
+
+#### 重启方式
+
+```
+
+1、使用 service 启动：
+service mysqld restart
+service mysql restart (5.5.7版本命令)
+
+2、使用 mysqld 脚本启动：
+/etc/init.d/mysqld restart
+```
+
+
+
+### mysql用户设置
+
+> 如果需要添加MYSQL用户，只需要对user表执行
+
+```
+INSERT INTO user 
+          (host, user, password, 
+           select_priv, insert_priv, update_priv) 
+           VALUES ('localhost', 'newUser_name', 
+           PASSWORD('newUser_password'), 'Y', 'Y', 'Y');
+```
+
+
+
+或者**(我用的)**
+
+```
+mysql> use mysql
+// 创建新的用户
+mysql> create user 'hexian'@'localhost' identified by '3628546';
+Query OK, 0 rows affected (0.03 sec)
+//用户授权
+mysql> grant all privileges on *.* to 'hexian'@'localhost' with grant option;
+Query OK, 0 rows affected (0.00 sec)
+//刷新权限
+mysql> flush privileges;
+Query OK, 0 rows affected (0.01 sec)
+
+```
+
+### mysql创建数据库
+
+> CREATE DATABASE 数据库名；
+
+*注意，如果使用普通用户,可能需要特定权限来创建或者删除MySQL数据库,这里使用root用户 并用mysqladmin来创建数据库*
+
+
+
+**命令**
+
+
+
+```
+ mysqladmin -u root -p create RUNOOB
+```
+
+
+
+**结果**
+
+```
+mysql> show databases
+    -> ;
++--------------------+
+| Database           |
++--------------------+
+| RUNOOB             |
+| information_schema |
+| mysql              |
+| performance_schema |
+| sys                |
++--------------------+
+5 rows in set (0.01 sec)
+
+```
+
+### mysql删除数据库
+
+> drop database <数据库名>
+
+
+
+**指令**
+
+```
+mysqladmin -u root -p drop RUNOOB
+```
+
+
+
+**结果1**
+
+
+
+```
+mysqladmin -u root -p drop RUNOOB
+Enter password: 
+Dropping the database is potentially a very bad thing to do.
+Any data stored in the database will be destroyed.
+
+Do you really want to drop the 'RUNOOB' database [y/N] y
+Database "RUNOOB" dropped
+
+```
+
+
+
+**结果2**
+
+
+
+```
+show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| sys                |
++--------------------+
+4 rows in set (0.00 sec)
+
+```
+
+
+
