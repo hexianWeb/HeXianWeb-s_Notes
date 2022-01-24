@@ -1602,4 +1602,137 @@ module.exports = db;
 
 ### 注册模块
 
+**前置内容**
+
 > 为了保证密码的安全性，不建议在数据库以明文形式保护用户的密码，推荐对密码进行加密存储
+
+**bcryptjs**
+
+1. 运行如下命令，安装指定版本的 `bcryptjs` ：
+
+```bash
+npm i bcryptjs@2.4.3Copy to clipboardErrorCopied
+```
+
+1. 在 `/router_handler/user.js` 中，导入 `bcryptjs` ：
+
+```js
+const bcrypt = require('bcryptjs')
+```
+
+1. 在注册用户的处理函数中，确认用户名可用之后，调用 `bcrypt.hashSync(明文密码, 随机盐的长度)` 方法，对用户的密码进行加密处理：
+
+```js
+// 对用户的密码,进行 bcrype 加密，返回值是加密之后的密码字符串
+userinfo.password = bcrypt.hashSync(userinfo.password, 10)
+```
+
+- **实现步骤**
+
+1. 检测表单数据是否合法
+2. 监测用户名是否被占用
+3. 对密码进行加密处理
+4. 插入新用户
+
+### 优化表单验证
+
+> 后端永远不要相信前端提交过来的任何内容
+
+```
+express-joi辅助表单验证
+注意 由于版本同步问题
+当你使用的是
+├── @escook/express-joi@1.1.1
+├── @hapi/joi@17.1.1
+两个包时
+可能会出现以下情况
+Error: Cannot mix different versions of joi schemas
+```
+
+**如何修改**
+
+```
+这是因为 @hapi/joi的版本过低而express-joi使用的是joi 一般会高出3个版本
+你需要在node_moudules中找到escook 并
+修改引入的Joi
+//初始的包源↓
+// const Joi = require('joi')
+// 更改引入的包源↓ 
+const Joi =require('@hapi/joi')
+
+```
+
+
+
+#### 用户验证规则
+
+> 具体可以参考joi文档
+
+```
+// require the joi to help us check info
+const joi = require("@hapi/joi");
+
+/**
+ * string() 值必须是字符串
+ * alphanum() 值只能是包含 a-zA-Z0-9 的字符串
+ * min(length) 最小长度
+ * max(length) 最大长度
+ * required() 值是必填项，不能为 undefined
+ * pattern(正则表达式) 值必须符合正则表达式的规则
+ */
+
+// 定义用户名的检查规则
+const username = joi.string().alphanum().min(3).max(10).required();
+
+// 定义密码的监测规则
+
+const password = joi
+  .string()
+  .alphanum()
+  .pattern(/^[\S]{6,12}$/)
+  .required();
+
+//   暴露规则 方便app.js引用规则
+exports.reg_login_shcema = {
+  body: {
+    username,
+    password,
+  },
+};
+
+
+```
+
+#### 路由挂载匹配规则
+
+```bash
+├── app.js
+├── db //数据库
+│   └── index.js
+├── package.json
+├── package-lock.json
+├── router //路由映射
+│   └── user.js
+├── router_handler //路由处理
+│   └── user.js
+└── schema //匹配规则
+    └── user.js
+```
+
+
+
+*在/router/user.js中*
+
+```
+// 导入表单验证中间件
+const expressJoi = require("@escook/express-joi");
+// 导入用户注册验证规则
+const { reg_login_shcema } = require("../schema/user");
+
+// 注册新用户
+// 加入验证Joi后，所发送的数据 会先通过expressJoi匹配是否合格，合格按原逻辑进行操作 不合格就会爆出全局ERR 由全局错误处理中间件处理
+router.post("/regUser", expressJoi(reg_login_shcema), userRouter.regUser);
+
+
+```
+
