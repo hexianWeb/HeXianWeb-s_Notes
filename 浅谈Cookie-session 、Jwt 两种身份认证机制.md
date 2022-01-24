@@ -1,5 +1,9 @@
 # 浅谈Cookie-session 、Jwt 两种身份认证机制
 
+> 作者：何贤
+
+
+
 *场景概述*
 
 > 因为HTTP是无状态（stateless）协议：所以针对登陆后的场景，如果每次页面的跳转 重定向都需要一定的空间储存用户名以及密码，这会增大服务器的负担 、所以就引入了各种身份认证机制
@@ -128,11 +132,11 @@ npm install jsonwebtoken express-jwt
 
 >  只需要引入即可
 
-```
+```js
 // 引入JWT模块
 
-const jwtwebtoken = require("jsonwebtoken");
-const expressJwt = require("express-jwt");
+const jwt = require("jsonwebtoken"); //生成jwt的中间件
+const expressJwt = require("express-jwt"); //解析jwt的中间件
 
 ```
 
@@ -143,7 +147,7 @@ const expressJwt = require("express-jwt");
 1. 生成时需要用到sercet密钥
 2. 还原解析时，也需要sercet密钥
 
-```
+```js
 const sercetKey = "<密钥内容>"
 ```
 
