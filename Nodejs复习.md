@@ -148,7 +148,7 @@ const nameWithoutExt = path.basename(fpath, ".txt");
 console.log(nameWithoutExt); //1
 
 const Ext = path.extname(fpath);
-console.log(Ext); //txt
+console.log(Ext); //txt/
 
 ```
 
@@ -611,6 +611,8 @@ http://127.0.0.1:8080/public/cartoon.jpg //访问路径
 
 ### Express 路由
 
+
+
 Express不建议将路由直接挂载到app上，而推荐将路由抽离为单独的模块
 
 1. 创建路由模块对应的.js文件
@@ -621,7 +623,7 @@ Express不建议将路由直接挂载到app上，而推荐将路由抽离为单�
 
   **路由模块对应的.js文件**
 
-```
+```js
 const express = require("express");
 
 const router = express.Router();
@@ -888,7 +890,7 @@ app.get("/", mw1, (req, res) => {
    
    ```
 
-### 跨域请求问题
+### 跨域请求问题（重要 路由之前）
 
    **CORS**
 
@@ -901,7 +903,7 @@ app.get("/", mw1, (req, res) => {
       const cors = require("cors");
       ```
 
-3. 使用中间件
+3. 使用中间件 注意 应用应该是方法
 
    ```js
    app.use(cors());
@@ -1025,6 +1027,55 @@ db.query(insert_sql2, testMan4, (err, res) => {
 
 
 ```
+
+
+
+#### 更新语句
+
+> 同上 不写了
+
+*对象中的属性会自动与数据库表中的列相匹配不需要绑定每个数据，*
+
+```js
+const hexianMan = { id: 6, username: "changMan", password: "123456" };
+const update_sql = "UPDATE `node_database`.`user` SET ?  WHERE ID =?";
+db.query(update_sql, [hexianMan, hexianMan.id], (err, res) => {
+  if (err) {
+    console.log("连接异常" + err.message);
+  } else if (res.affectedRows === 1) {
+    console.log("成功修改");
+  }
+});
+
+```
+
+
+
+### express的session中间件使用
+
+> 引入中间件之后按以下格式使用
+
+*当express-session配置成功后 即可通过req.session使用*
+
+
+
+```js
+
+// 引入session中间件
+const session = require("express-session");
+app.use(
+  session({
+    // 固定写法
+    resave: false,
+    // 固定写法
+    saveUninitialized: true,
+    // 任意字符作为加密手段
+    secret: "hexian",
+  })
+);
+
+```
+
 
 
 
@@ -1425,3 +1476,130 @@ show databases;
 
 
 
+# 项目实现
+
+## 初始化
+
+## 创建项目
+
+```js
+npm init -y
+```
+
+**引入对应的包文件**
+
+```
+api_server@1.0.0 /home/hexian/Node_test/api_server
+├── body-parser@1.19.1
+├── cors@2.8.5
+├── express-jwt@6.1.0
+├── express@4.17.2
+├── jsonwebtoken@8.5.1
+├── mysql@2.18.1
+└── nodemon@2.0.15//这是常用的
+```
+
+**定义入口文件**
+
+> 1.配置跨域请求
+>
+> 2.配置解析表单数据的中间件
+
+```js
+//导入express
+const express = require("express");
+
+// 创建服务器实例
+const app = express();
+
+// 解析表单数据的中间件 x-www 
+app.use(express.urlencoded({ extended: false }));
+
+// 导入并且配置cors中间件 注意是带有()的 并且需要在路由模块之前导入
+const cors = require("cors");
+app.use(cors());
+
+// 导入注册登陆的路由模块
+const userrouter = require("./router/user");
+app.use("/api", userrouter);
+
+// 启动服务器
+app.listen(8081, () => {
+  console.log("http://127.0.0.1:8081");
+});
+
+```
+
+
+
+### 路由模块
+
+> 模块目录
+
+```
+├── router //只存放映射关系
+│   └── user.js
+└── router_handler //真正函数处理模块
+```
+
+
+
+**在设计模块时，为了保证路由模块的纯粹性，所有的路由处理函数都必须抽离到对应的路由处理函数模块中**
+
+*这是路由函数处理模块*
+
+```js
+// 注册新用户的处理函数
+exports.regUser = (req, res) => {
+  res.send("注册模块");
+};
+
+// 新用户登录的处理函数
+exports.login = (req, res) => {
+  res.send("登录模块");
+};
+```
+
+*这是路由映射处理模块*
+
+```js
+const express = require("express");
+
+const router = express.Router();
+
+// 引入router_handler中的对应处理模块
+const userRouter = require("../router_handler/user");
+// 注册新用户
+router.post("/regUser", userRouter.regUser);//可以看到 只接受暴露的模块 本身不写任何内容
+
+//登录
+router.post("/login", userRouter.login);
+
+// 暴露这个路由模块
+module.exports = router;
+
+```
+
+
+
+### 连接数据库的工具类
+
+```js
+// 导入mysql模块
+const mysql = require("mysql");
+
+// 建立与数据库的连接
+const db = mysql.createPool({
+  host: "127.0.0.1",
+  user: "root",
+  password: "root",
+  database: "node_database",
+});
+
+// 暴露这个工具类
+module.exports = db;
+```
+
+### 注册模块
+
+> 为了保证密码的安全性，不建议在数据库以明文形式保护用户的密码，推荐对密码进行加密存储
