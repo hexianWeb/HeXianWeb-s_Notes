@@ -2,6 +2,58 @@
 
 *nodemon可以帮助代码自动更新*
 
+## URL模块
+
+> 内置模块
+
+### parse
+
+>  可以将URL路径解析为一中对象类型
+
+example：
+
+```js
+const urlString =
+  "https://www.baidu.com:443/ad/index.html?id=8&name=mouse#tag=110";
+const urlObject = url.parse(urlString);
+```
+
+**输出结果**
+
+```log
+
+[2022-01-28T16:07:41.323] [DEBUG] cheese - Url {
+  protocol: 'https:', 协议
+  slashes: true,	
+  auth: null,	
+  host: 'www.baidu.com:443',
+  port: '443',
+  hostname: 'www.baidu.com',
+  hash: '#tag=110',
+  search: '?id=8&name=mouse',
+  query: 'id=8&name=mouse',
+  pathname: '/ad/index.html',
+  path: '/ad/index.html?id=8&name=mouse',
+  href: 'https://www.baidu.com:443/ad/index.html?id=8&name=mouse#tag=110'
+}
+```
+
+**format**
+
+> 可以将上述对象还原为URL地址
+
+```
+// url 中的format方法 可以将URL生成的对象逆向还原成初始的链接形式
+const reUrl = url.format(urlObject);
+```
+
+```
+结果：
+https://www.baidu.com:443/ad/index.html?id=8&name=mouse#tag=110
+```
+
+
+
 ## Fs模块
 
 ### readFile方法获取文件
@@ -151,6 +203,18 @@ const Ext = path.extname(fpath);
 console.log(Ext); //txt/
 
 ```
+
+如何获取完整的后缀名
+
+```js
+  const Ext = path.parse(req.file.originalname).ext;
+  console.log(Ext);
+  const reName = req.file.filename + Ext;
+  console.log(reName);
+ 
+```
+
+
 
 ## HTTP 模块
 
@@ -1076,7 +1140,30 @@ app.use(
 
 ```
 
+## Yarn使用入门
 
+> 包管理工具
+
+1. 初始化项目
+
+   ```bash
+   yarn init
+   ```
+
+   
+
+2. 添加依赖包
+
+   *同npm*
+
+3. 不同依赖项
+
+   | i名              | 作用                     |
+   | ---------------- | ------------------------ |
+   | devDenpendencies | 业务依赖，上线也要用得到 |
+   |                  |                          |
+
+   
 
 
 ## MYSQL （Linux学习）
@@ -1740,10 +1827,54 @@ router.post("/regUser", expressJoi(reg_login_shcema), userRouter.regUser);
 
 > 实现步骤
 
-1. 检测表单是否合法
+1. 检测表单是否合法（可以利用expressJoi）
 2. 根据用户名查询用户数据
 3. 判断密码是否匹配用户
 4. 生产JWT的token字符串
+
+> 这里比较关键的是在登录时生成JWT作为页面token
+
+```js
+exports.login = (req, res) => {
+  // 登录模块处理函数
+  // 获取表单数据
+  const userinfo = req.body;
+  console.log(userinfo);
+  // SQL语句 判断是否用该用户存在
+  const login_check_sql = `select * from ev_user where username=?`;
+  db.query(login_check_sql, [userinfo.username], (err, result) => {
+    // 该账户不合法
+    if (result.length === 0) {
+      return res.cc("该账户名不存在");
+    }
+    // 对数据库中用户的密码进行解密操作 并与输入密码匹配
+    // 这里调用bcryptjs中的compare函数 需要加密密码后置
+    const Login_Result = bcrypt.compareSync(
+      userinfo.password,
+      result[0].password
+    );
+    if (Login_Result) {
+      // 认证成功 服务器分配临时token
+      // 剔除完毕之后，user 中只保留了用户的 id, username, nickname, email 这四个属性的值
+      const user = { ...result[0], password: "", user_pic: "" };
+      // 利用jwt中间件生成token 过期时间为10h
+      const tokenStr = jwt.sign(user, sercetKey.jwtSecretKey, {
+        expiresIn: "10h",
+      });
+      // send发送token
+      return res.send({
+        status: 0,
+        msg: "登陆成功",
+        token: "Bearer " + tokenStr,
+      });
+    } else {
+      return res.cc("用户密码不匹配");
+    }
+  });
+};
+```
+
+
 
 ## 个人中心
 
@@ -1752,3 +1883,69 @@ router.post("/regUser", expressJoi(reg_login_shcema), userRouter.regUser);
 1. 初始化 **路由** 模块
 2. 初始化 **路由处理函数** 模块
 3. 获取用户的基本信息
+
+> 这个难度偏低 CURD
+
+
+
+## 文章管理
+
+**这里用到了multer中间件**
+
+> Multer会将express的request中的文件以及文本分离开，文本放置在req.body，文件放置在req.file
+
+1. 首先 我们需要配置一个Multer对象，multer的options有四种，但是我们只需要设置最基本的dest就够用了，即是文件存储路径，注意：如果不设置options，那么文件将永远无法写入磁盘，只会存在与内存中。
+
+2. 然后是文件上传的数量控制
+
+   | 方法   | 作用                                                         |
+   | ------ | ------------------------------------------------------------ |
+   | single | 接受一个以 `fieldname` 命名的文件。这个文件的信息保存在 `req.file` |
+   | array  | 接受一个以 `fieldname` 命名的文件数组。可以配置 `maxCount` 来限制上传的最大数量。这些文件的信息保存在 `req.files` |
+   | fields | 接受指定 `fields` 的混合文件。这些文件的信息保存在 `req.files`。 |
+   | none   | 只接受文本域                                                 |
+   | any    | 一切上传的文件 保存在req.files中                             |
+
+   
+
+   **应用实例**
+
+   
+
+   ```js
+   // 创建multer的实例 通过dest属性指定文件的存放路径
+   const upload = multer({ dest: path.join(__dirname, "../uploads") });
+   // 发布新文章的路由
+   // upload.single() 是一个局部生效的中间件，用来解析 FormData 格式的表单数据
+   // 将文件类型的数据，解析并挂载到 req.file 属性中
+   // 将文本类型的数据，解析并挂载到 req.body 属性中
+   // 注意 验证中间件需要放在upload后面，否则会失效
+   router.post(
+     "/add",
+     //指向文件类型
+     upload.single("cover_img"),
+     expressJoi(pubilshArticles_shcema),
+     article_handler.addArticle
+   );
+   ```
+
+
+
+# 一些常用的包
+
+```bash
+api_server@1.0.0 /home/hexian/Node_test/api_server
+├── @escook/express-joi@1.1.1 //验证规则设置
+├── @hapi/joi@17.1.1		//验证规则 
+├── bcryptjs@2.4.3			//密码加密
+├── body-parser@1.19.1		//表单解析
+├── cors@2.8.5				//跨域请求
+├── express-jwt@6.1.0		token解析
+├── express@4.17.2			express框架
+├── jsonwebtoken@8.5.1		token生成
+├── moment@2.29.1			时间包
+├── multer@1.4.4			文件管理
+├── mysql@2.18.1			数据库操作
+└── nodemon@2.0.15			调试
+```
+
