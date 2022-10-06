@@ -1,8 +1,95 @@
-# Linux 网络管理指令
+# Linux 应该知道
+
+> 作者 何贤
+
+## 初始化服务器
+
+1. 以root身份登录
+
+2. 创建新的用户
+
+   **以root**身份登录后，您将能够添加新用户帐户。将来，我们将使用这个新帐户而不是**root**登录。
+
+   ```bash
+   adduser hexian
+   ```
+
+   
+
+3. 授予管理权限
+
+   现在我们有了一个具有常规帐户权限的新用户帐户。但是，我们有时可能需要执行管理任务。
+
+   **为了避免退出我们的普通用户并以root**帐户重新登录，我们可以为我们的普通帐户设置所谓的*超级用户*或**root**权限。这将允许我们的普通用户通过将单词放在命令前来以管理权限运行命令`sudo`。
+
+   要将这些权限添加到我们的新用户，我们需要将用户添加到**sudo**组。默认情况下，在 Ubuntu 20.04 上，属于**sudo**组成员的用户可以使用该`sudo`命令。
+
+   以**root**身份运行此命令将您的新用户添加到**sudo**组（用您的新用户替换突出显示的用户名）
+
+   ```
+   usermod -aG usdo hexian	
+   ```
+
+   
+
+4. <a href="#append">设置基本防火墙</a>
+
+   Ubuntu 20.04 服务器可以使用 UFW 防火墙来确保只允许连接到某些服务。我们可以使用这个应用程序设置一个基本的防火墙。
+
+   应用程序可以在安装时向 UFW 注册其配置文件。这些配置文件允许 UFW 按名称管理这些应用程序。OpenSSH，允许我们现在连接到我们的服务器的服务，有一个在 UFW 注册的配置文件。
+
+   您可以通过键入以下内容来查看：
+
+   ```bash
+   ufw app list
+   ```
+
+   ```
+   Output
+   Available applications:
+     OpenSSH
+   ```
+
+   我们需要确保防火墙允许 SSH 连接，以便我们下次可以重新登录。我们可以通过键入以下内容来允许这些连接：
+
+   ```bash
+   ufw allow OpenSSH
+   ```
+
+   之后，我们可以通过键入以下命令启用防火墙：
+
+   ```bash
+   ufw enable
+   ```
+
+   键入`y`并按下`ENTER`以继续。您可以通过键入以下内容看到仍然允许 SSH 连接：
+
+   ```bash
+   ufw status
+   ```
+
+   ```
+   OutputStatus: active
+   
+   To                         Action      From
+   --                         ------      ----
+   OpenSSH                    ALLOW       Anywhere
+   OpenSSH (v6)               ALLOW       Anywhere (v6)
+   ```
+
+   由于**防火墙当前阻止除 SSH 之外的所有连接**，如果您安装和配置其他服务，则需要调整防火墙设置以允许流量进入。您可以在我们的[*UFW Essentials*指南](https://www.digitalocean.com/community/tutorials/ufw-essentials-common-firewall-rules-and-commands)中了解一些常见的 UFW 操作。
+
+5. 
+
+
+
+
+
+## Linux 网络管理指令
 
 > 作者：何贤
 
-## 端口监听命令（常用）
+### 端口监听命令（常用）
 
 **netstat**
 
@@ -59,7 +146,7 @@ wlp0s20f3: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 
 
 
-## 连接监测命令（常用）
+### 连接监测命令（常用）
 
 
 
@@ -70,7 +157,7 @@ wlp0s20f3: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 
 
 
-### **ping命令**
+#### **ping命令**
 
 ```
 ping www.4399.com
@@ -83,7 +170,7 @@ PING www.4399.com.lxdns.com (59.54.253.75) 56(84) bytes of data.
 
 
 
-### **telnet命令**
+#### **telnet命令**
 
 ```
 telnet www.4399.com 80
@@ -96,7 +183,7 @@ Escape character is '^]'.
 
 
 
-### **curl命令**
+#### **curl命令**
 
 > curl是一个利用URL规则在命令行下工作的传输工具
 
@@ -106,7 +193,7 @@ curl[optoins][url]
 
 
 
-### 常用用法
+#### 常用用法
 
 > curl [	目标网站	]
 
@@ -303,3 +390,6 @@ curl不仅仅可以下载文件，还可以上传文件。通过内置option:-T�
 ```
 # curl -f http://www.linux.com/error
 ```
+
+
+

@@ -2,11 +2,26 @@
 
 *nodemon可以帮助代码自动更新*
 
-## URL模块
+## NodeJs是什么？
+
+> Node.js 通常被描述为 C++ 和 JavaScript 的组合。C++ 部分由运行低级代码的绑定组成，使访问连接到计算机的硬件成为可能。JavaScript 部分将 JavaScript 作为其源代码，并在该语言的流行解释器（称为V8引擎）中运行它。
+> 有了这种理解，我们可以将 Node.js 描述为一种独特的工具，它结合了 JavaScript 和 C++，可以在浏览器环境之外运行程序。
+
+![](/home/hexian/笔记/笔记_全/笔记截图/ByHexian_2022-09-28_10-17.png)
+
+V8 是由 Google 创建和维护的项目。它需要 JavaScript 源代码并在浏览器环境之外运行它。当我们通过node命令运行程序时，源代码由 Node.js 运行时传递给 V8 执行。
+
+libuv 库包含允许对操作系统进行低级访问的 C++ 代码。V8 中默认不提供网络、写入文件系统和并发等功能，V8 是运行我们的 JavaScript 代码的 Node.js 的一部分。libuv 凭借其一组库，在 Node.js 环境中提供了这些实用程序以及更多功能。
+
+Node.js 是将两个库结合在一起的粘合剂，从而成为一个独特的解决方案。在脚本的整个执行过程中，Node.js 了解将控制权传递给哪个项目以及何时传递。
+
+## 模块
+
+### URL模块
 
 > 内置模块
 
-### parse
+#### parse
 
 >  可以将URL路径解析为一中对象类型
 
@@ -54,9 +69,9 @@ https://www.baidu.com:443/ad/index.html?id=8&name=mouse#tag=110
 
 
 
-## Fs模块
+### Fs模块
 
-### readFile方法获取文件
+#### readFile方法获取文件
 
 ```js
 // 1.导入 fs模块 来操作文件
@@ -76,7 +91,7 @@ fs.readFile("./files/1.txt", "utf8", function (err, dataStr) {
 
 ```
 
-### writeFile方法写入内容
+#### writeFile方法写入内容
 
 ```js
 // 1.导入 fs模块 来操作文件
@@ -99,7 +114,7 @@ fs.writeFile("./files/1.txt", "这里是WriteFile函数", function (err) {
 
 
 
-#### 一个写入的小例子
+一个写入的小例子
 
 ```js
 // 1.导入 fs模块 来操作文件
@@ -130,7 +145,7 @@ fs.readFile("./files/1.txt", "utf8", function (err, data) {
 
 ```
 
-### 路径动态拼接
+#### 路径动态拼接
 
 **代码在运行，会执行node命令所处的目录**
 
@@ -165,13 +180,13 @@ fs.writeFile(
 
 ```
 
-## PS模块
+### PS模块
 
-### path.join() 函数 路径拼接
+#### path.join() 函数 路径拼接
 
 **用来处理路径的模块**
 
-**path.join()来进行路径拼接**
+#### **path.join()来进行路径拼接**
 
 ```js
 const path = require("path");
@@ -183,7 +198,7 @@ console.log(pathStr2); // /home/hexian/Node_练习/files/1.txt
 
 ```
 
-### path. basename（）、extname()求文件名 文件后缀 函数函数
+#### path. basename（）、extname()求文件名 文件后缀 函数函数
 
 第二个参数为可选参数，如果不设置则输出名字+格式
 
@@ -216,9 +231,9 @@ console.log(Ext); //txt/
 
 
 
-## HTTP 模块
+### HTTP 模块
 
-### 创建基本的web服务器
+#### 创建基本的web服务器
 
 ```js
 // 1.导入http模块
@@ -236,7 +251,7 @@ server.listen(8080, function () {
 //终止 ctrl+C
 ```
 
-### request 请求对象
+request 请求对象
 
 **req返回的对象里 url属性为客户端请求的url地址，method属性为访问对象的方式**
 
@@ -292,7 +307,7 @@ server.listen(8080, function () {
 
 
 
-### 解决中文乱码
+#### 解决中文乱码
 
 **重新设置响应头 解决中文乱码格式**
 
@@ -301,7 +316,7 @@ server.listen(8080, function () {
 
 ```
 
-### 根据不同url相应不同的html内容
+#### 根据不同url相应不同的html内容
 
 ```js
 const http = require("http");
@@ -1570,8 +1585,23 @@ show databases;
 ## 创建项目
 
 ```js
-npm init -y
+npm init -y//项目初始化
+npm install --save-dev webpack //安装webpack和webpack的依赖cli
+    "webpack": "^4.44.2",
+    "webpack-cli": "^3.3.12"
+	Node:16.13.1
 ```
+
+> 你可能会在打包过程中出现问题 应该将hash加密加入webpack.config.js中
+
+```js
+const crypto = require("crypto");
+const crypto_orig_createHash = crypto.createHash;
+crypto.createHash = algorithm => crypto_orig_createHash(algorithm == "md4" ? "sha256" : algorithm);
+
+```
+
+
 
 **引入对应的包文件**
 
@@ -1617,7 +1647,14 @@ app.listen(8081, () => {
 
 ```
 
+### 在webpack处选择入口文件
 
+```
+```
+
+### 目录结构
+
+![](https://i.imgur.com/8PXk1I8.png)
 
 ### 路由模块
 
